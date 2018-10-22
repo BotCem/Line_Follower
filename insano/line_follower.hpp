@@ -30,7 +30,7 @@ unsigned int line_read();
 //								baseado na soma dos valores dos sensores. Deve ser utilizado
 //								junto com a old_decision();
 //								Saida: -14 <= x <= 14
-int old_line_read();
+unsigned int old_line_read();
 
 //old_decision(int):		Faz a logica e escreve nos motores baseada na leitura da função
 //							old_line_read(). Qualquer outro valor pode ter resultado inesperado;
@@ -49,7 +49,7 @@ const int IR = 13;
 const unsigned char PS_16 = (1<<ADPS2);
 const unsigned char PS_128 = (1<<ADPS2)|(1<<ADPS1)|(1<<ADPS0);
 
-int velbaixa = 0, velmedia = 50, velalta = 127;
+int velbaixa = 0, velmedia = 50, velalta = 160;
 
 void init2(){
   DDRD |= (1<<DDD6) | (1 <<DDD5); // set pins PD6(pin 6) and PD5(pin 5) as output
@@ -126,9 +126,10 @@ unsigned int line_read(){
 	for(int i = 0 ; i < NUM_SENSORS; i++){
 		pos += (reads[i]*1000.0*i)/somat;
 	}
+ return pos;
 }
 
-unsigned int old_line_read(){
+inline unsigned int old_line_read(){
 	unsigned int pos = 0;
 	for(int i  = 0 ; i < NUM_SENSORS; i++) {
 		reads[i] = analogRead(analogReads[i]);
@@ -139,12 +140,12 @@ unsigned int old_line_read(){
 	return pos;
 }
 
-void old_decision(int pos) {
+inline void old_decision(int pos) {
 	set_motor('f','f');
 	if(pos <= -8) {set_motor('t','f'); power_5(velmedia); power_6(velalta);}
 	else if (pos <= -4) {power_5(velbaixa); power_6(velalta);}
-	else if (pos <= -2) {power_5(90); power_6(velalta);}
-	else if (pos >= 2) {power_5(velalta); power_6(90);}
+	else if (pos <= -2) {power_5(45); power_6(velalta);}
+	else if (pos >= 2) {power_5(velalta); power_6(45);}
 	else if (pos >= 4) {power_5(velalta); power_6(velbaixa);}
 	else if (pos >= 8) {set_motor('f','t'); power_5(velalta); power_6(velmedia);}
 	else {power_5(velalta); power_6(velalta);}
