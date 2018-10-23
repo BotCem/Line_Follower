@@ -1,5 +1,10 @@
 #include <Arduino.h>
 
+float kp=0.14 , ki=0 , kd=0 ;
+int pos=0;
+
+inline void decision();
+
 //init2(): 					Usada para definir as configurações iniciais do programa. Colocar aqui 
 //							o que não for pra ser alterado frequentemente.
 //							Define todos os pinos de entrada/saida, seta o prescaler e configura 
@@ -9,11 +14,11 @@ void init2();
 //power_5(unsigned int):	Altera a potencia no pino 5. Esse pino não vai ser modificado,
 //							pois teria que alterar os registradores. Motor A.
 //							Entrada: 0 <= x <= 255.
-inline void power_5(unsigned int x);
+inline void power_5(int x);
 //power_6(unsigned int):	Altera a potencia no pino 6. Esse pino não vai ser modificado,
 //							pois teria que alterar os registradores. Motor B.
 //							Entrada: 0 <= x <= 255.
-inline void power_6(unsigned int x);
+inline void power_6(int x);
 
 //set_motor(char,char):		Altera as direções dos motores A e B. 
 //							Entrada: 'f' para frente e 't' para tras.
@@ -24,18 +29,18 @@ void set_motor(char ma, char mb);
 //							Saida: 0 < x < NUM_SENSORS*1000
 //							Centro: (NUM_SENSORS - 1)/2.0 * 1000	p/ NUM_SENSOR par
 //									((NUM_SENSORS)/2 - 1) * 1000	p/ NUM_SENSOR impar														
-unsigned int line_read();
+void line_read();
 
 //unsigned int old_line_read(): Faz a leitura antiga dos sensores, retornando um valor pra pos
 //								baseado na soma dos valores dos sensores. Deve ser utilizado
 //								junto com a old_decision();
 //								Saida: -14 <= x <= 14
-unsigned int old_line_read();
+inline unsigned int old_line_read();
 
 //old_decision(int):		Faz a logica e escreve nos motores baseada na leitura da função
 //							old_line_read(). Qualquer outro valor pode ter resultado inesperado;
 //							Entrada: -14 <= x <= 14						
-void old_decision(int pos);
+void old_decision(int p);
 
 const int NUM_SENSORS = 8;
 int analogReads[] = {A0, A1, A2, A3, A4, A5, A6, A7};
@@ -78,10 +83,14 @@ void init2(){
   digitalWrite(dirB2, HIGH);
 }
 
-inline void power_5(unsigned int x){
+inline void power_5(int x){
+  if(x < 0) x = 0;
+  if(x > 255) x = 255;
 	OCR0B = x;
 }
-inline void power_6(unsigned int x){
+inline void power_6(int x){
+  if(x < 0) x = 0;
+  if(x > 255) x = 255;
 	OCR0A = x;
 }
 
@@ -117,8 +126,9 @@ void set_motor(char ma , char mb){
 	}
 }
 
-unsigned int line_read(){
-	unsigned int somat = 0, pos = 0;
+void line_read(){
+	unsigned int somat = 0;
+	pos=0;
 	for(int i = 0 ; i < NUM_SENSORS; i++) {
 		reads[i] = 1024 - analogRead(analogReads[i]);
 		somat += reads[i];
@@ -126,27 +136,35 @@ unsigned int line_read(){
 	for(int i = 0 ; i < NUM_SENSORS; i++){
 		pos += (reads[i]*1000.0*i)/somat;
 	}
- return pos;
+
 }
 
 inline unsigned int old_line_read(){
-	unsigned int pos = 0;
+  unsigned int p = 0;
 	for(int i  = 0 ; i < NUM_SENSORS; i++) {
 		reads[i] = analogRead(analogReads[i]);
 		if (reads[i] > 820) reads[i] = 0;
 		else reads[i] = 1;
-		pos += reads[i]* multipler[i];
+		p += reads[i]* multipler[i];
 	}
-	return pos;
 }
 
-inline void old_decision(int pos) {
+inline void old_decision(int p) {
 	set_motor('f','f');
-	if(pos <= -8) {set_motor('t','f'); power_5(velmedia); power_6(velalta);}
-	else if (pos <= -4) {power_5(velbaixa); power_6(velalta);}
-	else if (pos <= -2) {power_5(45); power_6(velalta);}
-	else if (pos >= 2) {power_5(velalta); power_6(45);}
-	else if (pos >= 4) {power_5(velalta); power_6(velbaixa);}
-	else if (pos >= 8) {set_motor('f','t'); power_5(velalta); power_6(velmedia);}
+	if(p <= -8) {set_motor('t','f'); power_5(velmedia); power_6(velalta);}
+	else if (p <= -4) {power_5(velbaixa); power_6(velalta);}
+	else if (p <= -2) {power_5(45); power_6(velalta);}
+	else if (p >= 2) {power_5(velalta); power_6(45);}
+	else if (p >= 4) {power_5(velalta); power_6(velbaixa);}
+	else if (p >= 8) {set_motor('f','t'); power_5(velalta); power_6(velmedia);}
 	else {power_5(velalta); power_6(velalta);}
 }
+
+int erro=0 , pid = 0 , torque_base=220;
+inline void decision(){
+  erro=3500-pos;
+  pid=erro*kp;
+  power_5(torque_base+pid);//motor direito
+  power_6(torque_base-pid);//motor esquerdo
+}
+
