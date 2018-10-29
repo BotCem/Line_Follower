@@ -11,7 +11,7 @@ const char BASE = 'B';
 const char RUN = 'R';
 const char STOP = 'S';
 
-extern long kp ,ki , kd;
+extern float kp ,ki , kd;
 extern int estado_corrida;
 extern int torque_base;
 
@@ -63,9 +63,9 @@ void pid_handler() {
   pos = pos2;
   pos2 = command.indexOf(';',pos+1);
   for(int i = pos+1; i < pos2; i++) Kd += command[i];
-  kp = Kp.toInt()/1000;
-  ki = Ki.toInt()/1000;
-  kd = Kd.toInt()/1000;
+  kp = Kp.toInt()/1000.0;
+  ki = Ki.toInt()/1000.0;
+  kd = Kd.toInt()/1000.0;
   Serial.print("KP="); Serial.print(kp);
   Serial.print(" KI="); Serial.print(ki);
   Serial.print(" KD="); Serial.println(kd);

@@ -3,7 +3,7 @@
 #include <Arduino.h>
 
 
-long kp=7 , ki=0 , kd=0 ;
+float kp=0.14 , ki=0 , kd=0 ;
 int pos=0;
 
 inline void decision();
