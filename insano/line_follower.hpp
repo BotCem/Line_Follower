@@ -1,6 +1,9 @@
+#ifndef LINE_FOLLOWER
+#define LINE_FOLLOWER
 #include <Arduino.h>
 
-float kp=0.14 , ki=0 , kd=0 ;
+
+long kp=7 , ki=0 , kd=0 ;
 int pos=0;
 
 inline void decision();
@@ -159,8 +162,8 @@ inline void old_decision(int p) {
 	else if (p >= 8) {set_motor('f','t'); power_5(velalta); power_6(velmedia);}
 	else {power_5(velalta); power_6(velalta);}
 }
-
-int erro=0 , pid = 0 , torque_base=220;
+float erro = 0.0;
+int pid = 0 , torque_base=220;
 inline void decision(){
   erro=3500-pos;
   pid=erro*kp;
@@ -168,3 +171,5 @@ inline void decision(){
   power_6(torque_base-pid);//motor esquerdo
 }
 
+
+#endif
