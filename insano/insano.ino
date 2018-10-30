@@ -25,10 +25,10 @@ void loop(){
   //    pos += reads[i] << i;
   //  }
     decision();
-    //tempo=tempo_fim-tempo_inicio;
-   // delay(1);
-   //tempo_fim=micros();
-    // Serial.println(tempo);
+//    tempo=tempo_fim-tempo_inicio;
+//   // delay(1);
+//   tempo_fim=micros();
+//     Serial.println(tempo);
    //tempo=tempo_fim-tempo_inicio;
    comunica_serial();
   }

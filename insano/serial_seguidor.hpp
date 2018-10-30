@@ -15,6 +15,8 @@ extern float kp ,ki , kd;
 extern int estado_corrida;
 extern int torque_base;
 
+void comunica_serial();
+
 void base_handler(){
   Serial.println("Base handler");
   String motorE = "", motorD = "";
@@ -25,7 +27,8 @@ void base_handler(){
   long me = motorE.toInt();
   long md = motorD.toInt();
   torque_base = me;
-  Serial.print("BASE="); Serial.println(torque_base);
+  Serial.print("BASE_E="); Serial.print(me);
+  Serial.print("BASE_D="); Serial.println(md);
   }
 
 void run_handler(){
@@ -51,7 +54,15 @@ void motores_handler() {
   long md = motorD.toInt();
   Serial.print("ME="); Serial.print(me);
   Serial.print(" MD="); Serial.println(md);
+  estado_corrida = 1;
+  power_5(me);
+  power_6(md);
+  Serial.println("######## Correndo ########");
+  while(estado_corrida) {
+    comunica_serial();
   }
+  Serial.println("######## Parando ########");
+ }
   
 void pid_handler() {
   Serial.println("PID handler");

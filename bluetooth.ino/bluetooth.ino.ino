@@ -5,6 +5,8 @@ String command = ""; // Stores response of bluetooth device
 const char MOTORES = 'M';
 const char PID = 'P';
 const char BASE = 'B';
+const char RUN = 'R';
+const char STOP = 'S';
     
 void setup()   
 {  
@@ -14,7 +16,7 @@ void setup()
   Serial.println("Inicializando o programa");  
 //  //Inicia a serial configurada nas portas 10 e 11
 //  mySerial.begin(115200); 
-  pinMode(13,OUTPUT); 
+//  pinMode(13,OUTPUT); 
 }  
     
 void loop()  
@@ -42,6 +44,12 @@ void msg_handler() {
      case BASE:
       base_handler();
       break;
+//     case RUN:
+//      run_handler();
+//      break;
+//     case STOP:
+//      stop_handler();
+//      break;
      default:
       Serial.println("ERROR");
    }
@@ -77,5 +85,21 @@ void pid_handler() {
   Serial.print(" KI="); Serial.print(Ki);
   Serial.print(" KD="); Serial.println(Kd);
   }
-void base_handler() {}
+void base_handler() {
+  Serial.println("Base handler");
+  String base = "";
+  int pos = command.indexOf(';');
+  for(int i = 1; i < pos; i++) base += command[i];
+  long bs = base.toInt();
+  Serial.print("BASE="); Serial.println(bs);
+  }
+
+//void run_handler() {
+//  Serial.println("Run handler");
+//
+//
+//
+//
+//}
+
 
