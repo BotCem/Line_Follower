@@ -1,10 +1,10 @@
-#ifndef LINE_FOLLOWER
-#define LINE_FOLLOWER
+#ifndef LINE_FOLLOWER_HPP
+#define LINE_FOLLOWER_HPP
 #include <Arduino.h>
 
+#define LINE_READ_TRAIT true
 
-float kp=0.14 , ki=0 , kd=0 ;
-int pos=0;
+float kp=20 , ki=0 , kd=0 ;
 
 inline void decision();
 
@@ -45,10 +45,9 @@ inline unsigned int old_line_read();
 //							Entrada: -14 <= x <= 14						
 void old_decision(int p);
 
+
+
 const int NUM_SENSORS = 8;
-int analogReads[] = {A0, A1, A2, A3, A4, A5, A6, A7};
-int multipler[] = {-8, -4, -2, -1, 1, 2, 4, 8};
-unsigned int reads[NUM_SENSORS];
 const int dirA1 = 7;
 const int dirA2 = 8;
 const int dirB1 = 9;
@@ -57,7 +56,17 @@ const int IR = 13;
 const unsigned char PS_16 = (1<<ADPS2);
 const unsigned char PS_128 = (1<<ADPS2)|(1<<ADPS1)|(1<<ADPS0);
 
+int analogReads[] = {A0, A1, A2, A3, A4, A5, A6, A7};
+int multipler[] = {-8, -4, -2, -1, 1, 2, 4, 8};
+unsigned int reads[NUM_SENSORS];
+unsigned int reads_min[NUM_SENSORS] = {1023,1023,1023,1023,1023,1023,1023,1023};
+unsigned int reads_max[NUM_SENSORS] = {0,0,0,0,0,0,0,0};
 int velbaixa = 0, velmedia = 50, velalta = 160;
+unsigned int numero_de_leituras = 1;
+long pos;
+long somat;
+bool sensores_calibrados = false;
+
 
 void init2(){
   DDRD |= (1<<DDD6) | (1 <<DDD5); // set pins PD6(pin 6) and PD5(pin 5) as output
@@ -130,16 +139,38 @@ void set_motor(char ma , char mb){
 }
 
 void line_read(){
-	unsigned int somat = 0;
-	pos=0;
-	for(int i = 0 ; i < NUM_SENSORS; i++) {
+	somat = 0;
+	pos = 0;
+	for(long i = 0 ; i < NUM_SENSORS; i++) {    
 		reads[i] = 1024 - analogRead(analogReads[i]);
+    if(sensores_calibrados) {
+//      Serial.print(" ## "); Serial.print(reads[i]); 
+      reads[i] = map(reads[i],reads_min[i], reads_max[i], 0, 1023);   
+//      Serial.print(" x "); Serial.print(reads[i]); 
+    }
 		somat += reads[i];
+    pos += (i*reads[i]*1000);
+    /*Serial.print(i); Serial.print(" = ");*/// Serial.print (reads[i]); Serial.print(" +++ ");// Serial.println(pos);
+//    #if LINE_READ_TRAIT
+//      String msg("LINE_READ: sensor ");
+//      msg += i;
+//      msg += " valor ";
+//      msg += reads[i];    
+//      Serial.println(msg); 
+//    #endif 
 	}
-	for(int i = 0 ; i < NUM_SENSORS; i++){
-		pos += (reads[i]*1000.0*i)/somat;
-	}
+//     Serial.println(" ");
+// for(int i = 0; i < NUM_SENSORS; i++) {
+//  pos += (reads[i]*1000.0*i)/somat;
+// }
+//  Serial.println(somat);
+	pos /= somat;
 
+//  #if LINE_READ_TRAIT
+//    String msg("p ");  
+//    msg += pos;
+//    Serial.println(msg); 
+//   #endif 
 }
 
 inline unsigned int old_line_read(){
@@ -164,12 +195,29 @@ inline void old_decision(int p) {
 }
 float erro = 0.0;
 int pid = 0 , torque_base=220;
-inline void decision(){
+register unsigned long int time_1 = 0;
+inline void decision(){  
   erro=3500-pos;
   pid=erro*kp;
   power_5(torque_base+pid);//motor direito
   power_6(torque_base-pid);//motor esquerdo
 }
 
+inline void calibra_sensor(){
+  for(int i = 0 ; i < NUM_SENSORS; i++){
+    reads[i] = 1024 - analogRead(analogReads[i]); 
+    Serial.print(reads[i]); Serial.print(" ");
+    if(reads[i] < reads_min[i]) reads_min[i] = reads[i];
+    if(reads[i] > reads_max[i]) reads_max[i] = reads[i];
+  }
+  Serial.println(" ");
+}
+/*  somat = 0;
+  pos = 0;
+  for(long i = 0 ; i < NUM_SENSORS; i++) {    
+    reads[i] = 1024 - analogRead(analogReads[i]);   
+    somat += reads[i];
+    pos += (i*reads[i]*1000);
+*/
 
 #endif
