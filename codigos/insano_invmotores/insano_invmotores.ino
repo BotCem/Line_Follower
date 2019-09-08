@@ -1,7 +1,7 @@
 #include "line_follower.hpp"
 #include "serial_seguidor.hpp"
 
-#define CORRIDA_TRAIT true
+#define CORRIDA_TRAIT false
 
 bool estado_corrida = false;
 bool estado_calibrar = false;
@@ -12,8 +12,10 @@ void setup(){
   
 }
 
-const unsigned int DELTA_TEMPO = 1000; //tempo em microsegundos  
 unsigned long tempo_inicio = 0, tempo_passado = 0;
+
+extern const unsigned int DELTA_TEMPO;
+
 void loop(){
   comunica_serial();
   while(estado_corrida){
@@ -31,6 +33,9 @@ void loop(){
   while(estado_calibrar) {
     calibra_sensor();
     comunica_serial();
+    delay(200);
+    if(!estado_calibrar)
+      salva_eeprom();
   }
 }
 

@@ -1,11 +1,13 @@
 #ifndef LINE_FOLLOWER_HPP
 #define LINE_FOLLOWER_HPP
 #include <Arduino.h>
+#include <EEPROM.h>
 
 #define LINE_READ_TRAIT true
 
 float kp=20 , ki=0 , kd=0 ;
 
+const unsigned int DELTA_TEMPO = 1000; //tempo em microsegundos  
 inline void decision();
 
 //init2(): 					Usada para definir as configurações iniciais do programa. Colocar aqui 
@@ -61,11 +63,12 @@ int multipler[] = {-8, -4, -2, -1, 1, 2, 4, 8};
 unsigned int reads[NUM_SENSORS];
 unsigned int reads_min[NUM_SENSORS] = {1023,1023,1023,1023,1023,1023,1023,1023};
 unsigned int reads_max[NUM_SENSORS] = {0,0,0,0,0,0,0,0};
+unsigned int reads_thresh[NUM_SENSORS];
 int velbaixa = 0, velmedia = 50, velalta = 160;
 unsigned int numero_de_leituras = 1;
 long pos;
 long somat;
-bool sensores_calibrados = false;
+bool sensores_calibrados = true;
 
 
 void init2(){
@@ -87,6 +90,11 @@ void init2(){
   pinMode(dirB1, OUTPUT);
   pinMode(dirB2, OUTPUT);
   pinMode(IR,OUTPUT);
+
+  for(int i = 0; i < NUM_SENSORS; i++) {
+    pinMode(analogReads[i], INPUT);
+    reads_thresh[i] = EEPROM.read(i)*4;
+  }
 
   digitalWrite(IR, HIGH);
   digitalWrite(dirA1, LOW);
@@ -141,11 +149,15 @@ void set_motor(char ma , char mb){
 void line_read(){
 	somat = 0;
 	pos = 0;
-	for(long i = 0 ; i < NUM_SENSORS; i++) {    
-		reads[i] = 1024 - analogRead(analogReads[i]);
+	for(long i = 0 ; i < NUM_SENSORS; i++) {
+    reads[i] = 0;    
+    for(unsigned int j = 0; j < numero_de_leituras; j++){
+      reads[i] += 1024 - analogRead(analogReads[i]);
+    }
+		reads[i] /= numero_de_leituras;
     if(sensores_calibrados) {
 //      Serial.print(" ## "); Serial.print(reads[i]); 
-      reads[i] = map(reads[i],reads_min[i], reads_max[i], 0, 1023);   
+      reads[i] = (reads[i] > reads_thresh[i]) ?  1 : 0; 
 //      Serial.print(" x "); Serial.print(reads[i]); 
     }
 		somat += reads[i];
@@ -195,7 +207,7 @@ inline void old_decision(int p) {
 }
 float erro = 0.0;
 int pid = 0 , torque_base=220;
-register unsigned long int time_1 = 0;
+unsigned long int time_1 = 0;
 inline void decision(){  
   erro=3500-pos;
   pid=erro*kp;
@@ -206,18 +218,27 @@ inline void decision(){
 inline void calibra_sensor(){
   for(int i = 0 ; i < NUM_SENSORS; i++){
     reads[i] = 1024 - analogRead(analogReads[i]); 
-    Serial.print(reads[i]); Serial.print(" ");
+//    Serial.print(reads[i]); Serial.print(" ");
     if(reads[i] < reads_min[i]) reads_min[i] = reads[i];
     if(reads[i] > reads_max[i]) reads_max[i] = reads[i];
+    reads_thresh[i] = reads_min[i] + (reads_max[i] - reads_min[i])/2;
+    Serial.print(reads_thresh[i]); Serial.print(" ");
   }
   Serial.println(" ");
 }
-/*  somat = 0;
-  pos = 0;
-  for(long i = 0 ; i < NUM_SENSORS; i++) {    
-    reads[i] = 1024 - analogRead(analogReads[i]);   
-    somat += reads[i];
-    pos += (i*reads[i]*1000);
-*/
+
+void salva_eeprom() {
+  for(int i = 0; i < NUM_SENSORS; i++) {
+    EEPROM.write(i, reads_thresh[i]/4); //esta divido por 4 para caber em 1 byte, que é a unidade minima da eeprom
+  }
+}
+
+void limpa_eeprom() {
+  for(int i = 0; i < NUM_SENSORS; i++) {
+    EEPROM.write(i, 255); //esta divido por 4 para caber em 1 byte, que é a unidade minima da eeprom
+  }
+}
+
+
 
 #endif

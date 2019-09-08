@@ -85,7 +85,7 @@ void motores_handler() {
   
 void pid_handler() {
   Serial.println("PID handler");
-  String Kp = "", Ki = "", Kd = "";
+  String Kp = "", Ki = "", Kd = "", NL = "";
   int pos = command.indexOf(';');
   for(int i = 1; i < pos; i++) Kp += command[i];
   int pos2 = command.indexOf(';',pos+1);
@@ -93,12 +93,18 @@ void pid_handler() {
   pos = pos2;
   pos2 = command.indexOf(';',pos+1);
   for(int i = pos+1; i < pos2; i++) Kd += command[i];
+  pos = pos2;
+  pos2 = command.indexOf(';',pos+1);
+  for(int i = pos+1; i < pos2; i++) NL += command[i];
+  
   kp = Kp.toInt()/1000.0;
   ki = Ki.toInt()/1000.0;
   kd = Kd.toInt()/1000.0;
+  numero_de_leituras = NL.toInt();
   Serial.print("KP="); Serial.print(kp);
   Serial.print(" KI="); Serial.print(ki);
-  Serial.print(" KD="); Serial.println(kd);
+  Serial.print(" KD="); Serial.print(kd);
+  Serial.print(" NL="); Serial.println(numero_de_leituras);
   }
 
 void calibrar_handler() {
@@ -111,6 +117,8 @@ void calibrar_handler() {
   switch(com) {
     case 0:
       sensores_calibrados = false;
+      limpa_eeprom();
+      Serial.println("Sensores descalibrados");
       break;
     case 1:
       estado_calibrar = true;
@@ -128,6 +136,10 @@ void calibrar_handler() {
       Serial.print("\nValores maximos:");
       for(int i = 0 ; i < NUM_SENSORS; i++){
         Serial.print(reads_max[i]); Serial.print(" ");
+      }
+      Serial.print("\nValores threshold:");
+      for(int i = 0 ; i < NUM_SENSORS; i++){
+        Serial.print(reads_thresh[i]); Serial.print(" ");
       }
       Serial.println(" ");
   }    
