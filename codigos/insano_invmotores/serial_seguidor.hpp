@@ -101,6 +101,7 @@ void pid_handler() {
   ki = Ki.toInt()/1000.0;
   kd = Kd.toInt()/1000.0;
   numero_de_leituras = NL.toInt();
+  if(numero_de_leituras < 1) numero_de_leituras = 1;
   Serial.print("KP="); Serial.print(kp);
   Serial.print(" KI="); Serial.print(ki);
   Serial.print(" KD="); Serial.print(kd);

@@ -91,9 +91,10 @@ void init2(){
   pinMode(dirB2, OUTPUT);
   pinMode(IR,OUTPUT);
 
+  sensores_calibrados = EEPROM.read(0);
   for(int i = 0; i < NUM_SENSORS; i++) {
     pinMode(analogReads[i], INPUT);
-    reads_thresh[i] = EEPROM.read(i)*4;
+    reads_thresh[i] = EEPROM.read(i+1)*4;
   }
 
   digitalWrite(IR, HIGH);
@@ -152,7 +153,7 @@ void line_read(){
 	for(long i = 0 ; i < NUM_SENSORS; i++) {
     reads[i] = 0;    
     for(unsigned int j = 0; j < numero_de_leituras; j++){
-      reads[i] += 1024 - analogRead(analogReads[i]);
+      reads[i] = 1024 - analogRead(analogReads[i]);
     }
 		reads[i] /= numero_de_leituras;
     if(sensores_calibrados) {
@@ -228,6 +229,7 @@ inline void calibra_sensor(){
 }
 
 void salva_eeprom() {
+  EEPROM.write(0, 1);
   for(int i = 0; i < NUM_SENSORS; i++) {
     EEPROM.write(i, reads_thresh[i]/4); //esta divido por 4 para caber em 1 byte, que é a unidade minima da eeprom
   }
@@ -235,6 +237,11 @@ void salva_eeprom() {
 
 void limpa_eeprom() {
   for(int i = 0; i < NUM_SENSORS; i++) {
+    reads_min[i] = 1023;
+    reads_max[i] = 0;
+  }
+  EEPROM.write(0, 0);
+  for(int i = 0; i < NUM_SENSORS+1; i++) {
     EEPROM.write(i, 255); //esta divido por 4 para caber em 1 byte, que é a unidade minima da eeprom
   }
 }
